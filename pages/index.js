@@ -1,11 +1,12 @@
 import 'sf-font';
 import axios from 'axios';
 import { userContract } from '../components/config';
-import { pinJSONToIPFS } from '@/components/web3connect';
+import { pinJSONToIPFS, ethConnect } from '@/components/web3connect';
 
 export default function Home() {
 
   async function addProfile() {
+    document.getElementById('displayupdatechanged').innerHTML = "";
     let firstName = document.getElementById("first").value.toString()
     let lastName = document.getElementById("last").value.toString()
     let username = document.getElementById("user").value.toString()
@@ -20,10 +21,10 @@ export default function Home() {
 
     const cid = await pinJSONToIPFS(jsonData, fileName);
     console.log(cid);
-    // const connected = await ethConnect()
-    // await usercontract.addProfile(cid, connected, connected)
-    // let confirmation = 'Profile Updated';
-    // document.getElementById('displayupdatechanged').innerHTML = confirmation
+    const connected = await ethConnect();
+    await userContract.generateProfile(cid, connected, connected);
+    let confirmation = 'Profile Updated';
+    document.getElementById('displayupdatechanged').innerHTML = confirmation;
   }
 
 

@@ -9,17 +9,17 @@ export const pinJSONToIPFS = async (jsonData, fileName) => {
             name: fileName,
         },
     }
-    const result = await pinata.pinJSONToIPFS(jsonData,options);
+    const result = await pinata.pinJSONToIPFS(jsonData, options);
     const path = result.IpfsHash;
     return path;
 }
 
 export async function ethConnect() {
-    const web3Modal = new Web3Modal()
-    const connection = await web3Modal.connect()
+    const web3Modal = new Web3Modal();
+    const connection = await web3Modal.connect();
     const provider = new ethers.providers.Web3Provider(connection);
     const signer = provider.getSigner();
-    const addressraw = signer.getAddress();
-    const addressstr = (await addressraw).valueOf();
-    return addressstr;
+    const addressRaw = await signer.getAddress();  // to get hex value of the address
+    const addressStr = addressRaw.valueOf(); // to get str value of the address
+    return addressStr;
 }
