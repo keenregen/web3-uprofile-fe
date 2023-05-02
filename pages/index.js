@@ -1,8 +1,32 @@
 import 'sf-font';
 import axios from 'axios';
-
+import { userContract } from '../components/config';
+import { pinJSONToIPFS } from '@/components/web3connect';
 
 export default function Home() {
+
+  async function addProfile() {
+    let firstName = document.getElementById("first").value.toString()
+    let lastName = document.getElementById("last").value.toString()
+    let username = document.getElementById("user").value.toString()
+    let eMail = document.getElementById("email").value.toString()
+
+    if(!firstName || !lastName || !username || !eMail ) return
+      const jsonData = JSON.parse(JSON.stringify({
+        firstName, lastName, username, eMail
+    }));
+    
+    let fileName = "file0";
+
+    const cid = await pinJSONToIPFS(jsonData, fileName);
+    console.log(cid);
+    // const connected = await ethConnect()
+    // await usercontract.addProfile(cid, connected, connected)
+    // let confirmation = 'Profile Updated';
+    // document.getElementById('displayupdatechanged').innerHTML = confirmation
+  }
+
+
   return (
     <div
       style={{ color: "white", fontFamily: "SF Pro Display", fontSmooth: "3em" }}
@@ -213,6 +237,7 @@ export default function Home() {
                   fontWeight: "lighter",
                   fontSize: "20px",
                 }}
+                onClick={addProfile}
               >
                 Update Profile
               </button>
