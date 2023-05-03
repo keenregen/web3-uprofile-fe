@@ -1,6 +1,7 @@
-import { pinata } from "./config";
+import { pinata, nftContractAddr } from "./config";
 import Web3Modal from 'web3modal';
 import { ethers } from "ethers";
+import nftAbi from './nftAbi.json';
 
 
 export const pinJSONToIPFS = async (jsonData, fileName) => {
@@ -19,7 +20,22 @@ export async function ethConnect() {
     const connection = await web3Modal.connect();
     const provider = new ethers.providers.Web3Provider(connection);
     const signer = provider.getSigner();
+    const nftContract = new ethers.Contract(nftContractAddr, nftAbi, signer);
     const addressRaw = await signer.getAddress();  // to get hex value of the address
     const addressStr = addressRaw.valueOf(); // to get str value of the address
-    return addressStr;
+    return {addressStr, nftContract};
+}
+
+// check if nft from the specific collection exists
+export async function checkNfts() {
+    const walletData = await ethConnect();
+    const nftCon = walletData.nftContract;
+    const walletAddr = walletdata.addressStr;
+    const checkBalance = Number((await nftCon.balanceOf(walletAddr)).valueOf());
+    if (checkBalance > 0) {
+        return checkBalance;
+    }
+    else {
+        return 0;
+    }
 }
