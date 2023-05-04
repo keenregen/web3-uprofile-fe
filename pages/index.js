@@ -17,19 +17,42 @@ export default function Home() {
   async function connectYourWallet() {
     const output = await ethConnect();
     setSelectedAddress(window.ethereum.selectedAddress);
-    console.log("Wallet with address "+output.addressStr+" is connected.");
+    console.log("Wallet with address "+output.addressStr+" is connected. " + typeof(selectedAddress));
+  }
+
+  useEffect (() => {
+    getNftIds();
+  }, [selectedAddress])
+
+  async function getNftIds() {
+    if (window.ethereum.selectedAddress !== null) {
+    const numOfPassNfts = await getNumOfPassNfts();
+    if (numOfPassNfts > 0) {
+    const output = await signInUser();
+    setNftId(output.getNftId[0].toString())
+    setSelectedAddress(output.walletAddr);
+    }
+    else 
+    {console.log("You don't have any nft as passport")};
+  }
   }
 
   useEffect(() => {
     if (window.ethereum.selectedAddress === null){
+      setSelectedAddress(window.ethereum.selectedAddress);
       router.push("/")
     }
     else {
     const checkauth = setInterval(() =>{
       if (window.ethereum.selectedAddress !== null){
-       checkWallet()} else {return;}
+       checkWallet()} else {
+        setSelectedAddress(window.ethereum.selectedAddress);
+        setNftId("");
+        return;}
     }, 2000);
-    return () => { if (window.ethereum.selectedAddress === null){return;} 
+    return () => { if (window.ethereum.selectedAddress === null){
+      router.push("/"); 
+      return;} 
     else {clearInterval(checkauth)}};
     }},[selectedAddress])
 
@@ -51,18 +74,7 @@ export default function Home() {
     return output;
   }
 
-  async function getNftIds() {
-    if (window.ethereum.selectedAddress !== null) {
-    const numOfPassNfts = await getNumOfPassNfts();
-    if (numOfPassNfts > 0) {
-    const output = await signInUser();
-    setNftId(output.getNftId[0].toString())
-    console.log(nftId);
-    }
-    else 
-    {console.log("You don't have any nft as passport")};
-  }
-  }
+
 
   async function addProfile() {
     document.getElementById('displayupdatechanged').innerHTML = "";
@@ -308,14 +320,15 @@ export default function Home() {
           <div className="row d-flex">
             <div className="col-lg-6">
               <h4 className="mb-2">Personal Wallet</h4>
-              <button className="btn btn-secondary mt-2" onClick={connectYourWallet}>Connect Your Wallet</button>
               <h6
                 style={{
                   color: "#83EEFF",
                   fontSize: "13px",
                 }}
-              >
+              > {selectedAddress}
               </h6>
+              <button className="btn btn-secondary mb-2" onClick={connectYourWallet}>Connect Your Wallet</button>
+
               <input
                 type="text"
                 className="form-control col-10"
