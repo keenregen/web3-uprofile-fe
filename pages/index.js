@@ -1,9 +1,69 @@
 import 'sf-font';
 import axios from 'axios';
 import { userContract } from '../components/config';
-import { pinJSONToIPFS, ethConnect } from '@/components/web3connect';
+import { pinJSONToIPFS, ethConnect, checkNfts, signInUser } from '@/components/web3connect';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+
 
 export default function Home() {
+
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [nftId, setNftId] = useState('');
+  // const [numOfPassNfts,setNumOfPassNfts] = useState(0)
+
+  const router = useRouter();
+
+  async function connectYourWallet() {
+    const output = await ethConnect();
+    setSelectedAddress(window.ethereum.selectedAddress);
+    console.log("Wallet with address "+output.addressStr+" is connected.");
+  }
+
+  useEffect(() => {
+    router.push("/")
+    if (window.ethereum.selectedAddress === null){
+      router.push("/")
+    }
+    else {
+    const checkauth = setInterval(() =>{
+      if (window.ethereum.selectedAddress !== null){
+       checkWallet()} else {return;}
+    }, 2000);
+    return () => { if (window.ethereum.selectedAddress === null){return;} 
+    else {clearInterval(checkauth)}};
+    }},[selectedAddress])
+
+    async function checkWallet(){
+      if (window.ethereum.selectedAddress !== null){
+      // console.log("CheckWallet!")
+      const output = await checkNfts();
+      console.log(output);
+      if (output === 0) {
+        router.push("/denied")
+        return;
+      }}
+      else {return;}
+    }
+
+  async function getNumOfPassNfts() {
+    const output = await checkNfts();
+    console.log(output);
+    return output;
+  }
+
+  async function getNftIds() {
+    if (window.ethereum.selectedAddress !== null) {
+    const numOfPassNfts = await getNumOfPassNfts();
+    if (numOfPassNfts > 0) {
+    const output = await signInUser();
+    setNftId(output.getNftId[0].toString())
+    console.log(nftId);
+    }
+    else 
+    {console.log("You don't have any nft as passport")};
+  }
+  }
 
   async function addProfile() {
     document.getElementById('displayupdatechanged').innerHTML = "";
@@ -12,11 +72,11 @@ export default function Home() {
     let username = document.getElementById("user").value.toString()
     let eMail = document.getElementById("email").value.toString()
 
-    if(!firstName || !lastName || !username || !eMail ) return
-      const jsonData = JSON.parse(JSON.stringify({
-        firstName, lastName, username, eMail
+    if (!firstName || !lastName || !username || !eMail) return
+    const jsonData = JSON.parse(JSON.stringify({
+      firstName, lastName, username, eMail
     }));
-    
+
     let fileName = "file0";
 
     const cid = await pinJSONToIPFS(jsonData, fileName);
@@ -127,10 +187,11 @@ export default function Home() {
                     <h4 className="my-0" style={{ color: "white" }}>
                       NFT
                     </h4>
+
                     <small style={{ color: "white" }}>PASSPORT</small>
                   </div>
                   <span style={{ fontSize: "30px", color: "white" }}>
-                    ID
+                    ID {nftId}
                   </span>
                 </li>
               </ul>
@@ -248,6 +309,7 @@ export default function Home() {
           <div className="row d-flex">
             <div className="col-lg-6">
               <h4 className="mb-2">Personal Wallet</h4>
+              <button className="btn btn-secondary mt-2" onClick={connectYourWallet}>Connect Your Wallet</button>
               <h6
                 style={{
                   color: "#83EEFF",

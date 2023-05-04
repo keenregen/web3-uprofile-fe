@@ -23,19 +23,32 @@ export async function ethConnect() {
     const nftContract = new ethers.Contract(nftContractAddr, nftAbi, signer);
     const addressRaw = await signer.getAddress();  // to get hex value of the address
     const addressStr = addressRaw.valueOf(); // to get str value of the address
-    return {addressStr, nftContract};
+    return {addressStr, nftContract, connection};
 }
 
 // check if nft from the specific collection exists
 export async function checkNfts() {
+    if (window.ethereum.selectedAddress !== null) {
     const walletData = await ethConnect();
     const nftCon = walletData.nftContract;
-    const walletAddr = walletdata.addressStr;
+    const walletAddr = walletData.addressStr;
     const checkBalance = Number((await nftCon.balanceOf(walletAddr)).valueOf());
+
     if (checkBalance > 0) {
         return checkBalance;
     }
     else {
         return 0;
+    }
+}
+}
+
+export async function signInUser(){
+    if (window.ethereum.selectedAddress !== null) {
+    const walletData = await ethConnect();
+    const nftCon = walletData.nftContract;
+    const walletAddr = walletData.addressStr;
+    const getNftId = await nftCon.walletOfOwner(walletAddr);
+    return {getNftId, walletAddr};
     }
 }
