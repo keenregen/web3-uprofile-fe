@@ -21,7 +21,6 @@ export default function Home() {
   }
 
   useEffect(() => {
-    router.push("/")
     if (window.ethereum.selectedAddress === null){
       router.push("/")
     }
