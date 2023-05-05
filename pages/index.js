@@ -1,12 +1,20 @@
 import 'sf-font';
 import axios from 'axios';
 import { userContract } from '../components/config';
-import { pinJSONToIPFS, ethConnect, checkNfts, signInUser } from '@/components/web3connect';
+import { pinJSONToIPFS, ethConnect, checkNfts, signInUser, addPicture, changePicture, getAccount } from '@/components/web3connect';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
 
 export default function Home() {
+
+  async function test() {
+    if (window.ethereum.selectedAddress !== null){
+    const output = await getAccount();
+    console.log(output);}
+    else {console.log("You should connect your wallet first.")}
+
+  }
 
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [nftId, setNftId] = useState('');
@@ -17,64 +25,68 @@ export default function Home() {
   async function connectYourWallet() {
     const output = await ethConnect();
     setSelectedAddress(window.ethereum.selectedAddress);
-    console.log("Wallet with address "+output.addressStr+" is connected. " + typeof(selectedAddress));
+    console.log("Wallet with address " + output.addressStr + " is connected. " + typeof (selectedAddress));
   }
 
-  useEffect (() => {
+  useEffect(() => {
     getNftIds();
   }, [selectedAddress])
 
   async function getNftIds() {
     if (window.ethereum.selectedAddress !== null) {
-    const numOfPassNfts = await getNumOfPassNfts();
-    if (numOfPassNfts > 0) {
-    const output = await signInUser();
-    setNftId(output.getNftId[0].toString())
-    setSelectedAddress(output.walletAddr);
+      const numOfPassNfts = await getNumOfPassNfts();
+      if (numOfPassNfts > 0) {
+        const output = await signInUser();
+        setNftId(output.getNftId[0].toString())
+        setSelectedAddress(output.walletAddr);
+      }
+      else { console.log("You don't have any nft as passport") };
     }
-    else 
-    {console.log("You don't have any nft as passport")};
-  }
   }
 
   useEffect(() => {
-    if (window.ethereum.selectedAddress === null){
+    if (window.ethereum.selectedAddress === null) {
       setSelectedAddress(window.ethereum.selectedAddress);
       router.push("/")
     }
     else {
-    const checkauth = setInterval(() =>{
-      if (window.ethereum.selectedAddress !== null){
-       checkWallet()} else {
-        setSelectedAddress(window.ethereum.selectedAddress);
-        setNftId("");
-        return;}
-    }, 2000);
-    return () => { if (window.ethereum.selectedAddress === null){
-      router.push("/"); 
-      return;} 
-    else {clearInterval(checkauth)}};
-    }},[selectedAddress])
+      const checkauth = setInterval(() => {
+        if (window.ethereum.selectedAddress !== null) {
+          checkWallet()
+        } else {
+          setSelectedAddress(window.ethereum.selectedAddress);
+          setNftId("");
+          return;
+        }
+      }, 2000);
+      return () => {
+        if (window.ethereum.selectedAddress === null) {
+          router.push("/");
+          return;
+        }
+        else { clearInterval(checkauth) }
+      };
+    }
+  }, [selectedAddress])
 
-    async function checkWallet(){
-      if (window.ethereum.selectedAddress !== null){
+  async function checkWallet() {
+    if (window.ethereum.selectedAddress !== null) {
       // console.log("CheckWallet!")
       const output = await checkNfts();
       console.log(output);
       if (output === 0) {
         router.push("/denied")
         return;
-      }}
-      else {return;}
+      }
     }
+    else { return; }
+  }
 
   async function getNumOfPassNfts() {
     const output = await checkNfts();
     console.log(output);
     return output;
   }
-
-
 
   async function addProfile() {
     document.getElementById('displayupdatechanged').innerHTML = "";
@@ -93,9 +105,16 @@ export default function Home() {
     const cid = await pinJSONToIPFS(jsonData, fileName);
     console.log(cid);
     const connected = await ethConnect();
-    await userContract.generateProfile(cid, connected, connected);
+    await userContract.generateProfile(cid, connected.addressStr, connected.addressStr);
     let confirmation = 'Profile Updated';
     document.getElementById('displayupdatechanged').innerHTML = confirmation;
+  }
+
+  async function updatePicture(uplFile) {
+    const file = uplFile.target.files[0];
+    const picuCid = await changePicture(file);
+    console.log(picuCid);
+    await addPicture(picuCid);
   }
 
 
@@ -181,6 +200,7 @@ export default function Home() {
                   className="btn btn-secondary d-flex justify-content-end"
                   type="file"
                   name="Asset"
+                  onChange={updatePicture}
 
                 />
                 Update Profile Avatar
@@ -209,6 +229,7 @@ export default function Home() {
             </div>
             <div className="col-md-6 col-lg-8">
               <h4 className="mb-3 d-flex justify-content-end">Profile Info</h4>
+              <button onClick={test}>Get Account Info</button>
               <h5
                 className="d-flex justify-content-end"
                 id="displayupdatechanged"
