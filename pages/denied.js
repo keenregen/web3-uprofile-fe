@@ -23,7 +23,7 @@ export default function Denied() {
     <div className={styles.container}>
       <main className={styles.main}>
         <h1 style={{ color: 'white', textAlign:"center"}} >
-          Access Denied, Probably The Reason is:<br />"You Don't Have A Passport Nft"<br />
+          Access Denied, Probably The Reason is:<br />"You Don't Have Any Passport Nft"<br />
         </h1>
         <button className="btn btn-primary mt-2" onClick={goToHomePage}>
           Go To Home Page

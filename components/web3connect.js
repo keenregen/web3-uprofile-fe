@@ -5,9 +5,6 @@ import nftAbi from './nftAbi.json';
 import userDbAbi from './userDbAbi.json';
 
 
-
-
-
 export const pinJSONToIPFS = async (jsonData, fileName) => {
     const options = {
         pinataMetadata: {
@@ -60,47 +57,21 @@ export async function signInUser() {
     }
 }
 
-let i = -1;
-export async function changePicture(file) {
-    i++;
-    const options = {
-        pinataMetadata: {
-            name: "picu#"+ i.toString(),
-        },
-    };
-
-    const result = await pinata.pinJSONToIPFS(file, options);
-    const picuCid = result.IpfsHash;
-    return picuCid;
-}
-
-export async function addPicture(picuCid) {
-    const userWallet = await ethConnect();
-    const walletAddr = userWallet.addressStr;
-    const sendPicuCid = await userContract.updatePicture(picuCid, walletAddr);
-    const receipt = await sendPicuCid.wait();
-    if (receipt) {
-        return 'Complete';
-    }
-}
 
 export async function getAccount() {
     const userData = await ethConnect();
     const userDbCon = userData.userDbCon;
     const userWalletAddr = userData.addressStr;
     // const nftCon = userData.nftContract;
-    const userCid = await userDbCon._account(userWalletAddr);
-    return userCid;
+    const userInfo = await userDbCon._account(userWalletAddr);
 
-    // if(usercid[1] == '0x0000000000000000000000000000000000000000'){
-    //     return 'no user';
-    // }
-    // else {
-    //     const userurl = 'http://10.10.20.32:8080/ipfs/' + usercid[0];
-    //     const piccid = await userctr._picture(userwallet);
-    //     const picurl = 'http://10.10.20.32:8080/ipfs/' + piccid;
-    //     const paywallet = usercid[2];
-    //     const balance = await tokenctr.balanceOf(paywallet);
-    //     return {userurl, picurl, balance};
-    // }
+    if(userInfo[1] == '0x0000000000000000000000000000000000000000'){
+        return 'Not a Registered User, You should register first.';
+    }
+    else {
+        const userUrl = 'https://ipfs.io/ipfs/' + userInfo[0];
+        const picuCid = await userDbCon._picture(userWalletAddr);
+        const picuUrl = 'https://ipfs.io/ipfs/' + picuCid;
+        return {userUrl, picuUrl};
+    }
 }

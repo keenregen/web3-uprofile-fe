@@ -1,20 +1,14 @@
 import 'sf-font';
 import axios from 'axios';
 import { userContract } from '../components/config';
-import { pinJSONToIPFS, ethConnect, checkNfts, signInUser, addPicture, changePicture, getAccount } from '@/components/web3connect';
+import { pinJSONToIPFS, ethConnect, checkNfts, signInUser, getAccount } from '@/components/web3connect';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
 
 export default function Home() {
 
-  async function test() {
-    if (window.ethereum.selectedAddress !== null){
-    const output = await getAccount();
-    console.log(output);}
-    else {console.log("You should connect your wallet first.")}
 
-  }
 
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [nftId, setNftId] = useState('');
@@ -25,11 +19,24 @@ export default function Home() {
   async function connectYourWallet() {
     const output = await ethConnect();
     setSelectedAddress(window.ethereum.selectedAddress);
-    console.log("Wallet with address " + output.addressStr + " is connected. " + typeof (selectedAddress));
+    console.log("Wallet with address " + output.addressStr + " is connected. ");
+    
+
   }
 
   useEffect(() => {
+    getUser();
     getNftIds();
+    if (window.ethereum.selectedAddress !== null) {
+    document.getElementById('connectWallet').innerHTML = "Connected";
+    }
+    else{
+      document.getElementById('connectWallet').innerHTML = "Press This Button To Connect Your Wallet";
+      document.getElementById("first").value = ""
+      document.getElementById("last").value = ""
+      document.getElementById("user").value = ""
+      document.getElementById("email").value = ""
+    }
   }, [selectedAddress])
 
   async function getNftIds() {
@@ -37,7 +44,7 @@ export default function Home() {
       const numOfPassNfts = await getNumOfPassNfts();
       if (numOfPassNfts > 0) {
         const output = await signInUser();
-        setNftId(output.getNftId[0].toString())
+        setNftId(output.getNftId[0].toString());
         setSelectedAddress(output.walletAddr);
       }
       else { console.log("You don't have any nft as passport") };
@@ -104,17 +111,46 @@ export default function Home() {
 
     const cid = await pinJSONToIPFS(jsonData, fileName);
     console.log(cid);
+    document.getElementById('displayupdatechanged').innerHTML = "Waiting for profile update...";
     const connected = await ethConnect();
     await userContract.generateProfile(cid, connected.addressStr, connected.addressStr);
     let confirmation = 'Profile Updated';
     document.getElementById('displayupdatechanged').innerHTML = confirmation;
   }
 
-  async function updatePicture(uplFile) {
-    const file = uplFile.target.files[0];
-    const picuCid = await changePicture(file);
-    console.log(picuCid);
-    await addPicture(picuCid);
+
+
+  async function getUser() {
+    if (window.ethereum.selectedAddress !== null) {
+      const output = await signInUser();
+      if (output.getNftId[0]) {
+      setNftId(output.getNftId[0].toString()); }
+      setSelectedAddress(output.walletAddr);
+      const userData = await getAccount();
+      const userUrl = userData.userUrl;
+      if (userUrl == undefined) {
+        if (output.getNftId[0]) {
+        document.getElementById("displayupdatechanged").innerHTML = "Write your info and register below."
+        }
+        return;
+      }
+      else {
+        const header = {
+          "Content-Type": "application/json",
+        }
+        const userInfo = await axios.get(userUrl, header);
+        let first = userInfo.data.firstName;
+        let last = userInfo.data.lastName;
+        let user = userInfo.data.username;
+        let email = userInfo.data.eMail;
+        document.getElementById("first").value = first
+        document.getElementById("last").value = last
+        document.getElementById("user").value = user
+        document.getElementById("email").value = email
+      }
+    }
+    else { document.getElementById("displayupdatechanged").innerHTML = "Connect Your Wallet First"}
+
   }
 
 
@@ -124,45 +160,24 @@ export default function Home() {
     >
       <div className='container'>
         <main>
-          <div className="py-2 text-center">
-            <div className="col-7 p-3 mx-auto">
-              <img
-                className=" mb-4 mr-4 ml-4"
-                src="zero.png"
-                alt=""
-                width="160"
-                height="130"
-              />
-              <img
-                className=" mb-4 mr-4 mt-3 ml-4"
-                src="zero.png"
-                alt=""
-                width="200"
-                height="90"
-              />
-              <img
-                className="mb-4 mr-4 mt-3 ml-4"
-                src="zero.png"
-                alt=""
-                width="200"
-                height="70"
-              />
-            </div>
-            <div className="col mt-4 mx-auto">
-              <h1 className="mb-0">Edit Your</h1>
-              <h1 style={{ fontSize: "54px", marginRight: "5px" }}>
-                <img
-                  style={{ marginRight: "4px" }}
-                  src="zero.png"
-                  width="160"
-                  height="65"
-                />
-                Profile
-              </h1>
-            </div>
-          </div>
+
+        <div className="row d-flex ">
+            <div className="col-lg-6 align-items-right">
+
+              <button className="btn btn-primary mb-2 mt-3 d-flex col-md-12 justify-content-center" id="connectWallet" onClick={connectYourWallet}>Connect Your Wallet</button>
+              <h6
+              className="d-flex col-md-12 justify-content-center"
+                style={{
+                  color: "#83EEFF",
+                  fontSize: "13px",
+                }}
+              > {selectedAddress}
+              </h6>
+
+</div>
+              </div>
           <div className="row g-6">
-            <div className="col-md-3 col-lg-3">
+            <div className="col-md-3 col-lg-3 mt-3">
               <form
                 className="card p-1"
                 style={{
@@ -195,15 +210,7 @@ export default function Home() {
                     minHeight: "20px",
                   }}
                 />
-                <input
-                  style={{ backgroundColor: "transparent", color: "lightblue" }}
-                  className="btn btn-secondary d-flex justify-content-end"
-                  type="file"
-                  name="Asset"
-                  onChange={updatePicture}
 
-                />
-                Update Profile Avatar
               </form>
               <h4 className="d-flex justify-content-end align-items-right mt-2 mb-3">
                 <span className="text-primary bold">Rank</span>
@@ -228,12 +235,13 @@ export default function Home() {
               </ul>
             </div>
             <div className="col-md-6 col-lg-8">
-              <h4 className="mb-3 d-flex justify-content-end">Profile Info</h4>
-              <button onClick={test}>Get Account Info</button>
-              <h5
-                className="d-flex justify-content-end"
+            <h4
+                className="d-flex justify-content-center mt-3"
                 id="displayupdatechanged"
               />
+              <br />
+              <h4 className="mb-3 d-flex justify-content-center">Profile Info</h4>
+
               <form className="needs-validation" noValidate>
                 <div className="row g-3">
                   <div className="col-sm-6">
@@ -333,74 +341,12 @@ export default function Home() {
                 }}
                 onClick={addProfile}
               >
-                Update Profile
+                Register / Update Profile
               </button>
             </div>
           </div>
           <hr className="my-3" />
-          <div className="row d-flex">
-            <div className="col-lg-6">
-              <h4 className="mb-2">Personal Wallet</h4>
-              <h6
-                style={{
-                  color: "#83EEFF",
-                  fontSize: "13px",
-                }}
-              > {selectedAddress}
-              </h6>
-              <button className="btn btn-secondary mb-2" onClick={connectYourWallet}>Connect Your Wallet</button>
 
-              <input
-                type="text"
-                className="form-control col-10"
-                name="newwallet"
-                id="newwallet"
-                placeholder="Paste new wallet id"
-                style={{
-                  backgroundColor: "#d3d3d310",
-                  fontWeight: "lighter",
-                  color: "white",
-                }}
-                required
-              />
-              <button className="btn btn-secondary mt-2">
-                Update Wallet
-              </button>
-              <p className="lead" style={{ fontSize: "12px" }}>
-                Remember your wallet is tied to your NFT, If you update your
-                wallet, your NFT passport will be moved as well! Both items
-                are required for access. Once your NFT has been moved, please
-                re-login using your new wallet.
-              </p>
-              <h6 id="walletsuccess" />
-            </div>
-            <div className="col-lg-4">
-              <div className="row mb-1">
-                <div className="col-sm-3">
-                  <img width='60' height='60'
-                    src='zero.png'
-                  />
-                </div>
-                <div className='col-md-5'>
-                  <h4 className="mb-2">Balance</h4>
-                  <h3 className='mt-1'></h3>
-                </div>
-                <label>Internal Wallet</label>
-                <h6
-                  style={{
-                    color: "#83EEFF",
-                    fontSize: "13px",
-                  }}
-                >
-                </h6>
-                <h6 className="mt-2">Transfer LocalFungibleToken to Personal Wallet</h6>
-                <button className="btn btn-primary mt-2">
-                  Transfer LocalFungibleToken
-                </button>
-                <h6 id="displaytransfer" />
-              </div>
-            </div>
-          </div>
         </main>
       </div>
     </div>
